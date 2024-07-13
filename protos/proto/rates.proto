@@ -1,0 +1,27 @@
+syntax = "proto3" ;
+
+package proto ;
+
+option go_package = "protos/proto";
+
+service GetRates {
+  rpc Get(Req) returns (Response){};
+}
+
+message Req {
+   string market = 1;
+}
+
+message Response {
+  int64 timestamp = 1;
+  repeated Order ask = 2;
+  repeated Order bid = 3;
+}
+
+message Order {
+  string price = 1;
+  string volume = 2;
+  string amount = 3;
+  string factor = 4;
+  string type = 5;
+}
