@@ -3,26 +3,31 @@ package gserver
 import (
 	"Testovoe/internal/converter"
 	"Testovoe/internal/service"
-	pbrate "Testovoe/protos/gen"
+	proto "Testovoe/protos/gen"
 	"context"
-	"log/slog"
+	"go.uber.org/zap"
 )
 
 type Rate struct {
-	pbrate.UnimplementedGetRatesServer
-	serv service.GetRates
+	proto.UnimplementedGetRatesServer
+	serv   *service.RateService
+	logger *zap.Logger
 }
 
-func (r *Rate) Get(ctx context.Context, req *pbrate.Req) (*pbrate.Response, error) {
-	get, err := r.serv.Get(ctx, req.Market)
+func NewServer(serv *service.RateService, logger *zap.Logger) *Rate {
+	return &Rate{serv: serv, logger: logger}
+}
+
+func (r *Rate) Get(ctx context.Context, req *proto.Req) (*proto.Response, error) {
+	resp, err := r.serv.Get(ctx, req.Market)
 	if err != nil {
-		slog.Info("err in service Get")
+		r.logger.Error("Failed get rate: ", zap.Error(err))
 		return nil, err
 	}
 
-	askOrders, bidOrders := converter.ConvertToProto(get)
-	return &pbrate.Response{
-		Timestamp: get.Timestamp,
+	askOrders, bidOrders := converter.FromResponseToProto(resp)
+	return &proto.Response{
+		Timestamp: resp.Timestamp,
 		Ask:       askOrders,
 		Bid:       bidOrders,
 	}, nil

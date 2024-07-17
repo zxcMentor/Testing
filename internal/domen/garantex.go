@@ -1,7 +1,7 @@
 package domen
 
 type Response struct {
-	Ask       []Order `json:"ask"`
+	Asks      []Order `json:"asks"`
 	Bids      []Order `json:"bids"`
 	Timestamp int64   `json:"timestamp"`
 }
@@ -14,5 +14,11 @@ type Order struct {
 	Type   string `json:"type"`
 }
 type Request struct {
-	Message string
+	Message string `json:"message"`
+}
+
+type ResponseDTO struct {
+	Asks      Order `json:"asks"`
+	Bids      Order `json:"bids"`
+	Timestamp int64 `json:"timestamp"`
 }

@@ -14,8 +14,8 @@ message Req {
 
 message Response {
   int64 timestamp = 1;
-  repeated Order ask = 2;
-  repeated Order bid = 3;
+  Order ask = 2;
+  Order bid = 3;
 }
 
 message Order {
