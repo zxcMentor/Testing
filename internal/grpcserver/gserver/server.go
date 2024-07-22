@@ -3,26 +3,35 @@ package gserver
 import (
 	"Testovoe/internal/converter"
 	"Testovoe/internal/service"
-	pbrate "Testovoe/protos/gen"
+	proto "Testovoe/protos/gen"
 	"context"
-	"log/slog"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 type Rate struct {
-	pbrate.UnimplementedGetRatesServer
-	serv service.GetRates
+	proto.UnimplementedGetRatesServer
+	serv   *service.RateService
+	logger *zap.Logger
+	tp     trace.Tracer
 }
 
-func (r *Rate) Get(ctx context.Context, req *pbrate.Req) (*pbrate.Response, error) {
-	get, err := r.serv.Get(ctx, req.Market)
+func NewServer(serv *service.RateService, logger *zap.Logger, tp trace.Tracer) *Rate {
+	return &Rate{serv: serv, logger: logger, tp: tp}
+}
+
+func (r *Rate) Get(ctx context.Context, req *proto.Req) (*proto.Response, error) {
+	ctx, span := r.tp.Start(ctx, "server grpc")
+	defer span.End()
+	resp, err := r.serv.Get(ctx, req.Market)
 	if err != nil {
-		slog.Info("err in service Get")
+		r.logger.Error("Failed get rate: ", zap.Error(err))
 		return nil, err
 	}
 
-	askOrders, bidOrders := converter.ConvertToProto(get)
-	return &pbrate.Response{
-		Timestamp: get.Timestamp,
+	askOrders, bidOrders := converter.FromResponseToProto(resp)
+	return &proto.Response{
+		Timestamp: resp.Timestamp,
 		Ask:       askOrders,
 		Bid:       bidOrders,
 	}, nil

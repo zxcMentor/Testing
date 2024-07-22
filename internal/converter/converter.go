@@ -5,28 +5,41 @@ import (
 	pbrate "Testovoe/protos/gen"
 )
 
-func ConvertToProto(get *domen.Response) ([]*pbrate.Order, []*pbrate.Order) {
-	askOrders := make([]*pbrate.Order, 0, len(get.Ask))
-	for _, ask := range get.Ask {
-		askOrder := &pbrate.Order{
-			Price:  ask.Price,
-			Volume: ask.Volume,
-			Amount: ask.Amount,
-			Factor: ask.Factor,
-			Type:   ask.Type,
-		}
-		askOrders = append(askOrders, askOrder)
+func FromResponseToProto(resp *domen.ResponseDTO) (*pbrate.Order, *pbrate.Order) {
+	orderAsk := &pbrate.Order{
+		Price:  resp.Asks.Price,
+		Volume: resp.Asks.Volume,
+		Amount: resp.Asks.Amount,
+		Factor: resp.Asks.Factor,
+		Type:   resp.Asks.Type,
 	}
-	bidOrders := make([]*pbrate.Order, 0, len(get.Bids))
-	for _, bid := range get.Bids {
-		askOrder := &pbrate.Order{
-			Price:  bid.Price,
-			Volume: bid.Volume,
-			Amount: bid.Amount,
-			Factor: bid.Factor,
-			Type:   bid.Type,
-		}
-		bidOrders = append(bidOrders, askOrder)
+
+	orderBids := &pbrate.Order{
+		Price:  resp.Bids.Price,
+		Volume: resp.Bids.Volume,
+		Amount: resp.Bids.Amount,
+		Factor: resp.Bids.Factor,
+		Type:   resp.Bids.Type,
 	}
-	return askOrders, bidOrders
+	return orderAsk, orderBids
+}
+
+func FromResponseToResponseDTO(resp *domen.Response) *domen.ResponseDTO {
+	return &domen.ResponseDTO{
+		Asks: domen.Order{
+			Price:  resp.Asks[0].Price,
+			Volume: resp.Asks[0].Volume,
+			Amount: resp.Asks[0].Amount,
+			Factor: resp.Asks[0].Factor,
+			Type:   resp.Asks[0].Type,
+		},
+		Bids: domen.Order{
+			Price:  resp.Bids[0].Price,
+			Volume: resp.Bids[0].Volume,
+			Amount: resp.Bids[0].Amount,
+			Factor: resp.Bids[0].Factor,
+			Type:   resp.Bids[0].Type,
+		},
+		Timestamp: resp.Timestamp,
+	}
 }

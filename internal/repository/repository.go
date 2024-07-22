@@ -2,41 +2,46 @@ package repository
 
 import (
 	"Testovoe/internal/domen"
-	"database/sql"
-	"fmt"
+	"context"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@v2.20.2 --name=Repository
 type Repository interface {
-	Create(respMarket *domen.Response) error
+	Create(context.Context, *domen.Response) error
 }
 
 type Repo struct {
-	Db sql.DB
+	pg     *pgxpool.Pool
+	logger *zap.Logger
+	tp     trace.Tracer
 }
 
-func (r *Repo) Create(respMarket *domen.Response) error {
-	tx, err := r.Db.Begin()
-	if err != nil {
-		fmt.Println("err begin tx")
-	}
-	for _, bid := range respMarket.Bids {
-		_, err = tx.Exec("INSERT INTO bids (timestamp, price, volume, amount, factor, type) VALUES ($1, $2, $3, $4, $5, $6)",
-			respMarket.Timestamp, bid.Price, bid.Volume,
-			bid.Amount, bid.Factor, bid.Type)
+func NewRepo(pgx *pgxpool.Pool, logger *zap.Logger, tp trace.Tracer) *Repo {
+	return &Repo{pgx, logger, tp}
+}
 
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+func (r *Repo) Create(ctx context.Context, respDTO *domen.ResponseDTO) error {
+	_, span := r.tp.Start(ctx, "repo create ")
+	defer span.End()
+	_, err := r.pg.Exec(ctx, `
+			INSERT INTO asks (timestamp, price, volume, amount, factor, type)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			`, respDTO.Timestamp, respDTO.Asks.Price, respDTO.Asks.Volume,
+		respDTO.Asks.Amount, respDTO.Asks.Factor, respDTO.Asks.Type)
+	if err != nil {
+		return err
 	}
-	for _, ask := range respMarket.Ask {
-		_, err = tx.Exec("INSERT INTO asks (timestamp, price, volume, amount, factor, type) VALUES ($1, $2, $3, $4, $5, $6)",
-			respMarket.Timestamp, ask.Price, ask.Volume,
-			ask.Amount, ask.Factor, ask.Type)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+
+	_, err = r.pg.Exec(ctx, `
+			INSERT INTO bids (timestamp, price, volume, amount, factor, type)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			`, respDTO.Timestamp, respDTO.Bids.Price, respDTO.Bids.Volume,
+		respDTO.Bids.Amount, respDTO.Bids.Factor, respDTO.Bids.Type)
+	if err != nil {
+		return err
 	}
 
 	return nil
