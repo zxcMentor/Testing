@@ -1,0 +1,4 @@
+scrape_configs:
+  - job_name: 'my_grpc_service'
+    static_configs:
+      - targets: ['app:50050']

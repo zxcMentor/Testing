@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -20,13 +21,16 @@ type RateServicer interface {
 type RateService struct {
 	repo   *repository.Repo
 	logger *zap.Logger
+	tp     trace.Tracer
 }
 
-func NewService(repos *repository.Repo, logger *zap.Logger) *RateService {
-	return &RateService{repo: repos, logger: logger}
+func NewService(repos *repository.Repo, logger *zap.Logger, tp trace.Tracer) *RateService {
+	return &RateService{repo: repos, logger: logger, tp: tp}
 }
 
 func (gr *RateService) Get(ctx context.Context, market string) (*domen.ResponseDTO, error) {
+	ctx, span := gr.tp.Start(ctx, "service get")
+	defer span.End()
 	resp, err := http.Get(fmt.Sprintf("%s?market=%s", urlAPI, market))
 	if err != nil {
 		gr.logger.Error("Failed get response", zap.Error(err))

@@ -1,5 +1,5 @@
 -- 1_create_gtx_tables.up.sql
-CREATE TABLE IF NOT EXISTS public.asks (
+CREATE TABLE IF NOT EXISTS asks (
                                            id SERIAL PRIMARY KEY,
                                            timestamp INT,
                                            price  VARCHAR(100),
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.asks (
                                            type   VARCHAR(100)
 );
 
-CREATE TABLE IF NOT EXISTS public.bids (
+CREATE TABLE IF NOT EXISTS bids (
                                            id SERIAL PRIMARY KEY,
                                            timestamp INT,
                                            price  VARCHAR(100),
@@ -18,8 +18,3 @@ CREATE TABLE IF NOT EXISTS public.bids (
                                            factor VARCHAR(100),
                                            type   VARCHAR(100)
 );
-
--- 1_create_gtx_tables.down.sql
-
-DROP TABLE public.asks;
-DROP TABLE public.bids;

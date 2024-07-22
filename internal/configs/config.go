@@ -14,14 +14,6 @@ import (
 	"os"
 )
 
-type dbParam struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-}
-
 func Load(path string, logger *zap.Logger) (*pgxpool.Pool, error) {
 	err := godotenv.Load(path)
 	if err != nil {
@@ -40,9 +32,10 @@ func Load(path string, logger *zap.Logger) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		logger.Fatal("Error up: ", zap.Error(err))
+		logger.Fatal("Error UP: ", zap.Error(err))
 		return nil, err
 	}
+
 	logger.Info("Migrations UP")
 
 	return pool, nil
@@ -62,4 +55,12 @@ func loadParam() *dbParam {
 		Password: os.Getenv("DB_PASSWORD"),
 		DBName:   os.Getenv("DB_NAME"),
 	}
+}
+
+type dbParam struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
 }
